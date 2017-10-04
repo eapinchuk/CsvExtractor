@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/plugins/CsvExtractor" >
+        <file>icon.png</file>
+    </qresource>
+</RCC>

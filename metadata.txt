@@ -1,0 +1,39 @@
+# This file contains metadata for your plugin. Since 
+# version 2.0 of QGIS this is the proper way to supply 
+# information about a plugin. The old method of 
+# embedding metadata in __init__.py will 
+# is no longer supported since version 2.0.
+
+# This file should be included when you package your plugin.# Mandatory items:
+
+[general]
+name=Csv Extractor
+qgisMinimumVersion=2.0
+description=This plugin extract geometry from polygon type feature
+version=0.1
+author=Vladimir Rybalko / 2GIS
+email=vladimir.rybalko@gmail.com
+
+about=Плагин сохраняет полигональную геометрию по следующему правилу: для каждой части составной геометрии сначала экспортируется внешний контур, затем набор внутренних, потом следующий внешний контур, затем его внутренние и т.д
+
+tracker=.
+repository=.
+# End of mandatory metadata
+
+# Recommended items:
+
+# Uncomment the following line and add your changelog:
+# changelog=
+
+# Tags are comma separated with spaces allowed
+tags=extractor csv
+
+homepage=.
+category=Plugins
+icon=icon.png
+# experimental flag
+experimental=True
+
+# deprecated flag (applies to the whole plugin, not just a single version)
+deprecated=False
+
