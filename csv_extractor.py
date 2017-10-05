@@ -243,7 +243,7 @@ class CsvExtractor:
                     iter = layer.getFeatures()
                 
                 if iter == None:
-                    print 'no features to convert'
+                    QgsMessageLog.logMessage('no features to convert', 'CsvExtractor', QgsMessageLog.INFO)
                     return
 
                 featureCount = 1
@@ -270,7 +270,7 @@ class CsvExtractor:
                                 polygonOut = count
                                 for point in polygon:
                                     if self.dlg.invetrCheckBox.isChecked():
-                                        writeData( '{};{};{};{};{}\n'.format(featureOut, polygonOut, pointCount, str(point.y()).replace(".", ","), str(point.x()).replace(".", ",") ) )
+                                            writeData( '{};{};{};{};{}\n'.format(featureOut, polygonOut, pointCount, str(point.y()).replace(".", ","), str(point.x()).replace(".", ",") ) )
                                     else:
                                         writeData( '{};{};{};{};{}\n'.format(featureOut, polygonOut, pointCount, str(point.x()).replace(".", ","), str(point.y()).replace(".", ",") ) )
                                     pointCount = pointCount + 1
@@ -280,7 +280,10 @@ class CsvExtractor:
                         featureOut = featureCount
                         for line in geom.asPolyline():
                             lineOut = count
-                            writeData( '{};{};{};{};{}\n'.format(featureOut, lineOut, pointCount, str(line.x()).replace(".", ","), str(line.y()).replace(".", ",") ) )
+                            if self.dlg.invetrCheckBox.isChecked():
+                                writeData( '{};{};{};{};{}\n'.format(featureOut, lineOut, pointCount, str(line.y()).replace(".", ","), str(line.x()).replace(".", ",") ) )
+                            else:
+                                writeData( '{};{};{};{};{}\n'.format(featureOut, lineOut, pointCount, str(line.x()).replace(".", ","), str(line.y()).replace(".", ",") ) )
                             pointCount = pointCount + 1
                             count = count + 1
                         featureCount = featureCount + 1
