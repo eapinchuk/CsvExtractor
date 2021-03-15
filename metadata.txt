@@ -12,8 +12,8 @@ email=vladimir.rybalko@gmail.com & pobikaz@gmail.com
 
 about=Плагин сохраняет полигональную геометрию по следующему правилу: для каждой части составной геометрии сначала экспортируется внешний контур, затем набор внутренних, потом следующий внешний контур, затем его внутренние и т.д.
 
-tracker=http://bugs
-repository=http://repo
+tracker=https://github.com/eapinchuk/CsvExtractor/issues
+repository=https://github.com/eapinchuk/CsvExtractor
 # End of mandatory metadata
 
 # Recommended items:
@@ -28,7 +28,7 @@ changelog=0.2(2021-03-12z)
 # Tags are comma separated with spaces allowed
 tags=extractor csv
 
-homepage=http://homepage
+homepage=https://github.com/eapinchuk/CsvExtractor
 category=Vector
 icon=icon.png
 # experimental flag
