@@ -20,18 +20,24 @@
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
-from PyQt4.QtGui import QAction, QIcon, QFileDialog
+from __future__ import print_function
+from __future__ import absolute_import
+from builtins import str
+from builtins import object
+from qgis.PyQt.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
+from qgis.PyQt.QtWidgets import QAction, QFileDialog
+from qgis.PyQt.QtGui import QIcon
 # Initialize Qt resources from file resources.py
-import resources
+# from . import resources
+from .resources import *  # pylint: disable=W0401,W0614
 # Import the code for the dialog
-from csv_extractor_dialog import CsvExtractorDialog
+from .csv_extractor_dialog import CsvExtractorDialog
 import os.path
-from qgis.core import QGis, QgsGeometry, QgsMessageLog
+from qgis.core import Qgis, QgsGeometry, QgsMessageLog, QgsVectorLayer, QgsWkbTypes
 from qgis.gui import QgsMessageBar
 
 
-class CsvExtractor:
+class CsvExtractor(object):
     """QGIS Plugin Implementation."""
 
     def __init__(self, iface):
@@ -56,14 +62,11 @@ class CsvExtractor:
         if os.path.exists(locale_path):
             self.translator = QTranslator()
             self.translator.load(locale_path)
-
-            if qVersion() > '4.3.3':
-                QCoreApplication.installTranslator(self.translator)
-
+            QCoreApplication.installTranslator(self.translator)
 
         # Declare instance attributes
         self.actions = []
-        self.menu = self.tr(u'&Csv Extractor')
+        self.menu = self.tr(u'&CSV Extractor')
         # TODO: We are going to let the user set this up in a future iteration
         self.toolbar = self.iface.addToolBar(u'CsvExtractor')
         self.toolbar.setObjectName(u'CsvExtractor')
@@ -71,7 +74,7 @@ class CsvExtractor:
         # Create the dialog (after translation) and keep reference
         self.dlg = CsvExtractorDialog()
 
-        self.dlg.setFixedSize(self.dlg.size());
+        self.dlg.setFixedSize(self.dlg.size())
         self.dlg.lineEdit.clear()
         self.dlg.pushButton.clicked.connect(self.select_output_file)
 
@@ -89,7 +92,6 @@ class CsvExtractor:
         """
         # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
         return QCoreApplication.translate('CsvExtractor', message)
-
 
     def add_action(
         self,
@@ -154,11 +156,10 @@ class CsvExtractor:
 
         if add_to_toolbar:
             self.toolbar.addAction(action)
+            # self.iface.addToolBarIcon(action)
 
         if add_to_menu:
-            self.iface.addPluginToMenu(
-                self.menu,
-                action)
+            self.iface.addPluginToVectorMenu(self.menu, action)
 
         self.actions.append(action)
 
@@ -167,34 +168,34 @@ class CsvExtractor:
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-        icon_path = ':/plugins/CsvExtractor/icon.png'
+        icon_path = r":/plugins/CsvExtractor/icon.png"
         self.add_action(
             icon_path,
             text=self.tr(u'Save to CSV'),
             callback=self.run,
             parent=self.iface.mainWindow())
 
+
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
         for action in self.actions:
-            self.iface.removePluginMenu(
-                self.tr(u'&Csv Extractor'),
+            self.iface.removePluginVectorMenu(
+                self.tr(u'&CSV Extractor'),
                 action)
             self.iface.removeToolBarIcon(action)
         del self.toolbar
 
-
     def select_output_file(self):
-        filename = QFileDialog.getSaveFileName(self.dlg, "Select output file ","", '*.csv')
+        filename, __ = QFileDialog.getSaveFileName(self.dlg, "Select output file ", "", '*.csv')
         self.dlg.lineEdit.setText(filename)
 
     def run(self):
         self.dlg.comboBox.clear()
         self.dlg.lineEdit.clear()
-        layers = self.iface.legendInterface().layers()
+        layers = self.iface.mapCanvas().layers()
         layer_list = []
         for layer in layers:
-            if layer.LayerType() == 0 and (layer.wkbType() == QGis.WKBPolygon or layer.wkbType() == QGis.WKBMultiPolygon or layer.wkbType() == QGis.WKBLineString or layer.wkbType() == QGis.WKBMultiLineString):
+            if layer and isinstance(layer, QgsVectorLayer) and (layer.geometryType() == QgsWkbTypes.PolygonGeometry or layer.geometryType() == QgsWkbTypes.LineGeometry):
                 layer_list.append(layer.name())
         self.dlg.comboBox.addItems(layer_list)
         self.dlg.show()
@@ -202,14 +203,15 @@ class CsvExtractor:
         if result:
             filename = self.dlg.lineEdit.text()
             if not filename:
-                print 'file name not exist'
+                # fix_print_with_import
+                print('file name not exist')
                 return
 
             output_file = open(filename, 'w')
 
             def writeData(string):
-                text = string.decode('utf8')
-                string = text.encode('cp1251')
+                # text = string.decode('utf8')
+                # string = text.encode('cp1251')
                 output_file.write(string)
            
             selectedLayerIndex = self.dlg.comboBox.currentIndex()
@@ -222,72 +224,74 @@ class CsvExtractor:
             if layer:
                 writeData('Полное наименование:;\n')
                 writeData('Кадастровый (иной) номер:;\n')
-                geometryType = ''
-                if layer.wkbType() == QGis.WKBPolygon:
-                    geometryType = 'POLYGON'
-                if layer.wkbType() == QGis.WKBMultiPolygon:
-                    geometryType = 'MULTIPOLYGON'
-                if layer.wkbType() == QGis.WKBPoint:
-                    geometryType = 'POINT'
-                if layer.wkbType() == QGis.WKBLineString:
-                    geometryType = 'LINESTRING'
-                if layer.wkbType() == QGis.WKBMultiLineString:
-                    geometryType = 'MULTILINESTRING'
-                writeData( 'Тип геометрии:;{}\n'.format( geometryType ) )
-                writeData( 'Часть;Контур;№п/п;X;Y\n' )
+                geometry_type = ''
+                # self.iface.messageBar().pushMessage("Info", "geometryType() is: "+QgsWkbTypes.displayString(int(QgsWkbTypes.flatType(layer.wkbType()))), level=Qgis.Info, duration=15)
+                if (QgsWkbTypes.flatType(layer.wkbType()) == QgsWkbTypes.Polygon) or (QgsWkbTypes.flatType(layer.wkbType()) == QgsWkbTypes.MultiPolygon):
+                    geometry_type = 'POLYGON'
+                # if QgsWkbTypes.flatType(layer.wkbType()) == QgsWkbTypes.MultiPolygon:
+                    # geometry_type = 'MULTIPOLYGON'
+                if QgsWkbTypes.flatType(layer.wkbType()) == QgsWkbTypes.Point:
+                    geometry_type = 'POINT'
+                # if layer.wkbType() == QgsWkbTypes.LineString:
+                if (QgsWkbTypes.flatType(layer.wkbType()) == QgsWkbTypes.LineString) or (QgsWkbTypes.flatType(layer.wkbType()) == QgsWkbTypes.MultiLineString):
+                    geometry_type = 'LINESTRING'
+                # if QgsWkbTypes.flatType(layer.wkbType()) == QgsWkbTypes.MultiLineString:
+                    # geometry_type = 'MULTILINESTRING'
+                writeData('Тип геометрии:;{}\n'.format(geometry_type))
+                writeData('Часть;Контур;№п/п;X;Y\n')
                 
-                iter = None
+                # iter = None
                 if self.dlg.selectCheckBox.isChecked():
-                    iter = layer.selectedFeatures()
+                    features = layer.selectedFeatures()
                 else:
-                    iter = layer.getFeatures()
+                    features = layer.getFeatures()
                 
-                if iter == None:
-                    QgsMessageLog.logMessage('no features to convert', 'CsvExtractor', QgsMessageLog.INFO)
+                if len(features) == 0 :
+                    self.iface.messageBar().pushMessage("Info", "No features to extract", level=Qgis.Info, duration=15)
                     return
 
                 featureCount = 1
                 count = 1
                 pointCount = 1
-                for feature in iter:
+                for feature in features:
                     geom = feature.geometry()
-                    if geom.wkbType() == QGis.WKBPolygon:
+                    if QgsWkbTypes.flatType(geom.wkbType()) == QgsWkbTypes.Polygon:
                         featureOut = featureCount
                         for polygon in geom.asPolygon():
                             polygonOut = count
                             for point in polygon:
                                 if self.dlg.invetrCheckBox.isChecked():
-                                    writeData( '{};{};{};{};{}\n'.format(featureOut, polygonOut, pointCount, str(point.y()).replace(".", ","), str(point.x()).replace(".", ",") ) )
+                                    writeData('{};{};{};{};{}\n'.format(featureOut, polygonOut, pointCount, str(point.y()).replace(".", ","), str(point.x()).replace(".", ",")))
                                 else:
-                                    writeData( '{};{};{};{};{}\n'.format(featureOut, polygonOut, pointCount, str(point.x()).replace(".", ","), str(point.y()).replace(".", ",") ) )
+                                    writeData('{};{};{};{};{}\n'.format(featureOut, polygonOut, pointCount, str(point.x()).replace(".", ","), str(point.y()).replace(".", ",")))
                                 pointCount = pointCount + 1
                             count = count + 1
                         featureCount = featureCount + 1
-                    elif geom.wkbType() == QGis.WKBMultiPolygon:
+                    elif QgsWkbTypes.flatType(geom.wkbType()) == QgsWkbTypes.MultiPolygon:
                         for polygons in geom.asMultiPolygon():
                             featureOut = featureCount
                             for polygon in polygons:
                                 polygonOut = count
                                 for point in polygon:
                                     if self.dlg.invetrCheckBox.isChecked():
-                                            writeData( '{};{};{};{};{}\n'.format(featureOut, polygonOut, pointCount, str(point.y()).replace(".", ","), str(point.x()).replace(".", ",") ) )
+                                        writeData('{};{};{};{};{}\n'.format(featureOut, polygonOut, pointCount, str(point.y()).replace(".", ","), str(point.x()).replace(".", ",")))
                                     else:
-                                        writeData( '{};{};{};{};{}\n'.format(featureOut, polygonOut, pointCount, str(point.x()).replace(".", ","), str(point.y()).replace(".", ",") ) )
+                                        writeData('{};{};{};{};{}\n'.format(featureOut, polygonOut, pointCount, str(point.x()).replace(".", ","), str(point.y()).replace(".", ",")))
                                     pointCount = pointCount + 1
                                 count = count + 1
                             featureCount = featureCount + 1
-                    elif geom.wkbType() == QGis.WKBLineString or geom.wkbType() == QGis.WKBMultiLineString:
+                    elif QgsWkbTypes.flatType(geom.wkbType()) == QgsWkbTypes.LineString or QgsWkbTypes.flatType(geom.wkbType()) == QgsWkbTypes.MultiLineString:
                         featureOut = featureCount
                         for line in geom.asPolyline():
                             lineOut = count
                             if self.dlg.invetrCheckBox.isChecked():
-                                writeData( '{};{};{};{};{}\n'.format(featureOut, lineOut, pointCount, str(line.y()).replace(".", ","), str(line.x()).replace(".", ",") ) )
+                                writeData('{};{};{};{};{}\n'.format(featureOut, lineOut, pointCount, str(line.y()).replace(".", ","), str(line.x()).replace(".", ",")))
                             else:
-                                writeData( '{};{};{};{};{}\n'.format(featureOut, lineOut, pointCount, str(line.x()).replace(".", ","), str(line.y()).replace(".", ",") ) )
+                                writeData('{};{};{};{};{}\n'.format(featureOut, lineOut, pointCount, str(line.x()).replace(".", ","), str(line.y()).replace(".", ",")))
                             pointCount = pointCount + 1
                             count = count + 1
                         featureCount = featureCount + 1
                     # QgsMessageLog.logMessage(str(line.x()), 'CsvExtractor', QgsMessageLog.INFO)
                     # elif geom.wkbType() == QGis.WKBPoint:
-            self.iface.messageBar().pushMessage("Info", "The file was exported", level=QgsMessageBar.INFO, duration=15)
+            self.iface.messageBar().pushMessage("Info", "The file was exported", level=Qgis.Info, duration=15)
             output_file.close()
