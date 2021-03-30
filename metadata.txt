@@ -6,7 +6,7 @@
 name=Csv Extractor
 qgisMinimumVersion=3.10
 description=This plugin extract geometry from polygon type feature to CSV format compatible with GemsDev GeoMeta platform
-version=0.2
+version=0.4
 author=Vladimir Rybalko / 2GIS & Evgeniy Pinchuk
 email=vladimir.rybalko@gmail.com & pobikaz@gmail.com
 
@@ -20,7 +20,8 @@ repository=https://github.com/eapinchuk/CsvExtractor
 
 hasProcessingProvider=no
 # Uncomment the following line and add your changelog:
-changelog=0.2(2021-03-12z)
+changelog=0.4 (2021-03-30) bug fix
+    0.2(2021-03-12z)
      - Обновление до QGIS 3.10, плагин не выпадает если есть подгруженные растровые или WMS слои, выгрузка происходит в utf-8
     0.1:
      - Start Plugin for QGIS 2

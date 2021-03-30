@@ -175,7 +175,6 @@ class CsvExtractor(object):
             callback=self.run,
             parent=self.iface.mainWindow())
 
-
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
         for action in self.actions:
@@ -199,6 +198,11 @@ class CsvExtractor(object):
                 layer_list.append(layer.name())
         self.dlg.comboBox.addItems(layer_list)
         self.dlg.show()
+
+        # TODO: Устанавилавать активный слой в качестве слоя по умолчанию
+        # TODO: Чек бокс "Только отмеченные" устанавливать в зависимости от того, если ли выбранные объекты в активном слое
+        # self.dlg.comboBox.selected_text = ""
+
         result = self.dlg.exec_()
         if result:
             filename = self.dlg.lineEdit.text()
@@ -242,13 +246,15 @@ class CsvExtractor(object):
                 
                 # iter = None
                 if self.dlg.selectCheckBox.isChecked():
-                    features = layer.selectedFeatures()
+                    features = layer.getSelectedFeatures()
+                    # featureCount = layer.selectedFeatureCount()
                 else:
                     features = layer.getFeatures()
+                    # featureCount = layer.featureCount()
                 
-                if len(features) == 0 :
-                    self.iface.messageBar().pushMessage("Info", "No features to extract", level=Qgis.Info, duration=15)
-                    return
+                # if featureCount == 0:
+                #     self.iface.messageBar().pushMessage("Info", "No features to extract", level=Qgis.Info, duration=15)
+                #     return
 
                 featureCount = 1
                 count = 1
@@ -293,5 +299,8 @@ class CsvExtractor(object):
                         featureCount = featureCount + 1
                     # QgsMessageLog.logMessage(str(line.x()), 'CsvExtractor', QgsMessageLog.INFO)
                     # elif geom.wkbType() == QGis.WKBPoint:
-            self.iface.messageBar().pushMessage("Info", "The file was exported", level=Qgis.Info, duration=15)
+            if featureCount > 1:
+                self.iface.messageBar().pushMessage("Info", "The file was exported", level=Qgis.Info, duration=15)
+            else:
+                self.iface.messageBar().pushMessage("Info", "No features to extract", level=Qgis.Info, duration=15)
             output_file.close()
